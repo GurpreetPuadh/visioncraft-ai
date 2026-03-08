@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — VisionCraft{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h4 style="font-weight:700;letter-spacing:-0.02em;margin:0">Welcome back, {{ user.username }}</h4>
+      <p class="text-muted-vc mb-0" style="font-size:0.875rem;margin-top:0.25rem">Your AI visual editing workspace</p>
+    </div>
+    <a href="/upload/" class="btn btn-vc px-3">
+      <i class="bi bi-plus-lg me-1"></i>New Project
+    </a>
+  </div>
+
+  <!-- Stats row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-number text-cyan">{{ stats.total_files }}</div>
+            <div class="stat-label">Total Files</div>
+          </div>
+          <div class="stat-icon" style="background:rgba(0,229,255,0.1);color:var(--vc-cyan)">
+            <i class="bi bi-folder2"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-number text-purple">{{ stats.images }}</div>
+            <div class="stat-label">Images</div>
+          </div>
+          <div class="stat-icon" style="background:rgba(168,85,247,0.1);color:var(--vc-purple)">
+            <i class="bi bi-image"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-number text-orange">{{ stats.videos }}</div>
+            <div class="stat-label">Videos</div>
+          </div>
+          <div class="stat-icon" style="background:rgba(255,107,53,0.1);color:var(--vc-orange)">
+            <i class="bi bi-camera-video"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-number text-green">{{ stats.total_operations }}</div>
+            <div class="stat-label">Operations Run</div>
+          </div>
+          <div class="stat-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)">
+            <i class="bi bi-lightning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Recent files -->
+    <div class="col-lg-8">
+      <div class="vc-card p-0">
+        <div class="d-flex justify-content-between align-items-center p-3 pb-2" style="border-bottom:1px solid var(--vc-border)">
+          <span style="font-size:0.85rem;font-weight:600">Recent Files</span>
+          <a href="/gallery/" class="text-cyan" style="font-size:0.8rem;text-decoration:none">View all <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="p-3">
+          {% if recent_files %}
+          <div class="row g-2">
+            {% for file in recent_files %}
+            <div class="col-6 col-md-4">
+              <a href="/editor/{{ file.id }}/" class="text-decoration-none">
+                <div class="vc-card vc-card-hover p-2">
+                  <div style="height:80px;background:var(--vc-surface);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:0.5rem;overflow:hidden">
+                    {% if file.file_type == 'image' %}
+                    <img src="{{ file.original_file.url }}" alt="{{ file.original_filename }}"
+                         style="width:100%;height:100%;object-fit:cover;border-radius:6px">
+                    {% else %}
+                    <i class="bi bi-camera-video text-orange" style="font-size:2rem"></i>
+                    {% endif %}
+                  </div>
+                  <p style="font-size:0.72rem;color:var(--vc-text);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ file.original_filename }}</p>
+                  <p style="font-size:0.68rem;color:var(--vc-muted);margin:0">{{ file.file_size_display }}</p>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-cloud-upload" style="font-size:2.5rem;color:var(--vc-border)"></i>
+            <p class="text-muted-vc mt-2" style="font-size:0.875rem">No files yet. <a href="/upload/" class="text-cyan">Upload your first file</a></p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent operations + storage -->
+    <div class="col-lg-4">
+      <!-- Storage -->
+      <div class="vc-card p-3 mb-3">
+        <div class="section-title">Storage Used</div>
+        <div class="d-flex align-items-baseline gap-1 mb-2">
+          <span style="font-size:1.4rem;font-weight:700;color:var(--vc-text)">
+            {% if stats.storage_used < 1048576 %}
+              {{ stats.storage_used|filesizeformat }}
+            {% else %}
+              {{ stats.storage_used|filesizeformat }}
+            {% endif %}
+          </span>
+        </div>
+        <div class="vc-progress">
+          <div class="vc-progress-bar" style="width:{{ stats.total_files|default:0 }}%"></div>
+        </div>
+      </div>
+
+      <!-- Recent operations -->
+      <div class="vc-card p-0">
+        <div class="p-3 pb-2" style="border-bottom:1px solid var(--vc-border)">
+          <span style="font-size:0.85rem;font-weight:600">Recent Operations</span>
+        </div>
+        <div class="p-2">
+          {% if recent_ops %}
+          {% for op in recent_ops %}
+          <div class="d-flex align-items-center gap-2 p-2 rounded" style="border-bottom:1px solid var(--vc-border)">
+            <div style="width:28px;height:28px;border-radius:6px;background:
+              {% if op.status == 'completed' %}rgba(34,211,165,0.1){% else %}rgba(255,107,53,0.1){% endif %};
+              display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0">
+              {% if op.status == 'completed' %}
+              <i class="bi bi-check2" style="color:var(--vc-green)"></i>
+              {% else %}
+              <i class="bi bi-x" style="color:var(--vc-orange)"></i>
+              {% endif %}
+            </div>
+            <div style="overflow:hidden;flex:1">
+              <p style="font-size:0.78rem;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--vc-text)">
+                {{ op.get_operation_type_display }}
+              </p>
+              <p style="font-size:0.68rem;margin:0;color:var(--vc-muted)">
+                {{ op.media_file.original_filename|truncatechars:20 }}
+              </p>
+            </div>
+            {% if op.processing_time %}
+            <span style="font-size:0.68rem;color:var(--vc-muted);font-family:var(--vc-mono);flex-shrink:0">{{ op.processing_time }}s</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="text-center py-3">
+            <p class="text-muted-vc" style="font-size:0.8rem">No operations yet</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="row g-3 mt-1">
+    <div class="col-12">
+      <div class="section-title">Quick Actions</div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/upload/" class="btn btn-vc-outline btn-sm px-3"><i class="bi bi-upload me-1"></i>Upload File</a>
+        <a href="/gallery/?type=image" class="btn btn-vc-outline btn-sm px-3"><i class="bi bi-images me-1"></i>Image Gallery</a>
+        <a href="/gallery/?type=video" class="btn btn-vc-outline btn-sm px-3"><i class="bi bi-camera-video me-1"></i>Video Gallery</a>
+        <a href="/history/" class="btn btn-vc-outline btn-sm px-3"><i class="bi bi-clock-history me-1"></i>Operation History</a>
+        <a href="/api/stats/" target="_blank" class="btn btn-vc-outline btn-sm px-3"><i class="bi bi-braces me-1"></i>API Stats</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

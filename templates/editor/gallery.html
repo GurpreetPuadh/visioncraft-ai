@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Gallery — VisionCraft{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 style="font-weight:700;letter-spacing:-0.02em;margin:0">Gallery</h4>
+      <p class="text-muted-vc mb-0" style="font-size:0.875rem">{{ files.count }} file{{ files.count|pluralize }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <!-- Filter tabs -->
+      <div class="d-flex gap-1 p-1 rounded" style="background:var(--vc-card);border:1px solid var(--vc-border)">
+        <a href="?type=all" class="btn btn-sm px-3 {% if active_filter == 'all' %}btn-vc{% else %}btn-vc-outline border-0{% endif %}" style="font-size:0.8rem">All</a>
+        <a href="?type=image" class="btn btn-sm px-3 {% if active_filter == 'image' %}btn-vc{% else %}btn-vc-outline border-0{% endif %}" style="font-size:0.8rem">Images</a>
+        <a href="?type=video" class="btn btn-sm px-3 {% if active_filter == 'video' %}btn-vc{% else %}btn-vc-outline border-0{% endif %}" style="font-size:0.8rem">Videos</a>
+      </div>
+      <a href="/upload/" class="btn btn-vc px-3"><i class="bi bi-plus-lg me-1"></i>Upload</a>
+    </div>
+  </div>
+
+  {% if files %}
+  <div class="row g-3">
+    {% for file in files %}
+    <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+      <div class="vc-card vc-card-hover h-100" style="overflow:hidden">
+        <!-- Thumbnail -->
+        <div style="height:140px;background:var(--vc-surface);position:relative;overflow:hidden">
+          {% if file.file_type == 'image' %}
+          <img src="{{ file.original_file.url }}" alt="{{ file.original_filename }}"
+               style="width:100%;height:100%;object-fit:cover;transition:transform 0.3s"
+               onmouseover="this.style.transform='scale(1.05)'"
+               onmouseout="this.style.transform='scale(1)'">
+          {% else %}
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.25rem">
+            <i class="bi bi-camera-video" style="font-size:2rem;color:var(--vc-orange)"></i>
+            {% if file.duration %}
+            <span style="font-size:0.7rem;color:var(--vc-muted);font-family:var(--vc-mono)">{{ file.duration|floatformat:1 }}s</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          <!-- Type badge -->
+          <span class="vc-badge position-absolute" style="top:6px;left:6px;{% if file.file_type == 'image' %}background:rgba(0,229,255,0.9);color:#000{% else %}background:rgba(255,107,53,0.9);color:#fff{% endif %}">
+            {{ file.file_type }}
+          </span>
+        </div>
+
+        <!-- Info -->
+        <div class="p-2">
+          <p style="font-size:0.78rem;font-weight:500;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--vc-text)"
+             title="{{ file.original_filename }}">{{ file.original_filename }}</p>
+          <p style="font-size:0.7rem;color:var(--vc-muted);margin:0.15rem 0 0.5rem">
+            {{ file.file_size_display }}
+            {% if file.width and file.height %} · {{ file.width }}×{{ file.height }}{% endif %}
+          </p>
+          <div class="d-flex gap-1">
+            <a href="/editor/{{ file.id }}/" class="btn btn-vc btn-sm flex-1" style="font-size:0.72rem;padding:0.25rem 0.5rem">
+              <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <button class="btn btn-vc-outline btn-sm px-2" style="font-size:0.72rem"
+                    onclick="deleteFile({{ file.id }}, this)" title="Delete">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <div style="width:80px;height:80px;border-radius:50%;background:var(--vc-card);border:1px solid var(--vc-border);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">
+      <i class="bi bi-images" style="font-size:2rem;color:var(--vc-border)"></i>
+    </div>
+    <h5 style="font-weight:600;color:var(--vc-muted)">No files yet</h5>
+    <p class="text-muted-vc" style="font-size:0.875rem">Upload your first image or video to get started</p>
+    <a href="/upload/" class="btn btn-vc px-4 mt-2"><i class="bi bi-upload me-2"></i>Upload File</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteFile(fileId, btn) {
+  if (!confirm('Delete this file and all its edits?')) return;
+  btn.disabled = true;
+  fetch(`/editor/${fileId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' }
+  }).then(r => r.json()).then(data => {
+    if (data.status === 'deleted') {
+      showToast('File deleted', 'success');
+      btn.closest('.col-6, .col-md-4, .col-lg-3, .col-xl-2').remove();
+    }
+  }).catch(() => { showToast('Delete failed', 'error'); btn.disabled = false; });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — VisionCraft</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --vc-bg:#090c14;--vc-surface:#0f1420;--vc-card:#141926;--vc-border:#1e2535;--vc-cyan:#00e5ff;--vc-purple:#a855f7;--vc-text:#e2e8f0;--vc-muted:#64748b; }
+    body { background:var(--vc-bg);color:var(--vc-text);font-family:'Space Grotesk',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center; }
+    .auth-card { background:var(--vc-card);border:1px solid var(--vc-border);border-radius:16px;padding:2.5rem;width:100%;max-width:420px; }
+    .form-control { background:var(--vc-surface)!important;border:1px solid var(--vc-border)!important;color:var(--vc-text)!important;border-radius:8px!important;font-family:'Space Grotesk',sans-serif!important;padding:0.65rem 0.85rem!important; }
+    .form-control:focus { border-color:var(--vc-cyan)!important;box-shadow:0 0 0 3px rgba(0,229,255,0.1)!important; }
+    .form-label { font-size:0.82rem;font-weight:500;color:var(--vc-muted);margin-bottom:0.35rem; }
+    .btn-vc { background:linear-gradient(135deg,var(--vc-cyan),#00b4d8);border:none;color:#000;font-weight:600;font-family:'Space Grotesk',sans-serif;border-radius:8px;width:100%;padding:0.7rem; }
+    .btn-vc:hover { transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,229,255,0.3);color:#000; }
+  </style>
+</head>
+<body>
+<div class="p-3" style="width:100%;max-width:420px">
+  <div class="text-center mb-4">
+    <a href="/" style="font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--vc-cyan),var(--vc-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none">
+      <i class="bi bi-eye-fill" style="-webkit-text-fill-color:var(--vc-cyan)"></i> VisionCraft
+    </a>
+  </div>
+  <div class="auth-card">
+    <h5 style="font-weight:700;letter-spacing:-0.02em;margin-bottom:0.25rem">Welcome back</h5>
+    <p style="color:var(--vc-muted);font-size:0.875rem;margin-bottom:1.5rem">Sign in to your account</p>
+
+    {% if messages %}{% for msg in messages %}<div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:0.65rem 0.85rem;font-size:0.82rem;color:#ff6b35;margin-bottom:1rem">{{ msg }}</div>{% endfor %}{% endif %}
+
+    <form method="post">{% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="your_username" required autofocus>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-vc"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</button>
+    </form>
+    <p class="text-center mt-3" style="font-size:0.82rem;color:var(--vc-muted)">
+      Don't have an account? <a href="/register/" style="color:var(--vc-cyan);text-decoration:none">Register</a>
+    </p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

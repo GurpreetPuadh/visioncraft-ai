@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}VisionCraft AI{% endblock %}</title>
+
+  <!-- Bootstrap 5.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --vc-bg:        #090c14;
+      --vc-surface:   #0f1420;
+      --vc-card:      #141926;
+      --vc-border:    #1e2535;
+      --vc-cyan:      #00e5ff;
+      --vc-purple:    #a855f7;
+      --vc-green:     #22d3a5;
+      --vc-orange:    #ff6b35;
+      --vc-text:      #e2e8f0;
+      --vc-muted:     #64748b;
+      --vc-font:      'Space Grotesk', sans-serif;
+      --vc-mono:      'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--vc-bg);
+      color: var(--vc-text);
+      font-family: var(--vc-font);
+      min-height: 100vh;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--vc-surface); }
+    ::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 3px; }
+
+    /* Navbar */
+    .vc-navbar {
+      background: rgba(9, 12, 20, 0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--vc-border);
+      padding: 0.75rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .vc-logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--vc-cyan), var(--vc-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .vc-logo span { color: var(--vc-muted); -webkit-text-fill-color: var(--vc-muted); }
+    .nav-link-vc {
+      color: var(--vc-muted) !important;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.4rem 0.75rem !important;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-link-vc:hover, .nav-link-vc.active {
+      color: var(--vc-text) !important;
+      background: var(--vc-surface);
+    }
+    .nav-link-vc.active { color: var(--vc-cyan) !important; }
+
+    /* Cards */
+    .vc-card {
+      background: var(--vc-card);
+      border: 1px solid var(--vc-border);
+      border-radius: 12px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .vc-card:hover { border-color: rgba(0, 229, 255, 0.25); }
+    .vc-card-hover:hover { transform: translateY(-2px); }
+
+    /* Stat cards */
+    .stat-card {
+      background: var(--vc-card);
+      border: 1px solid var(--vc-border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--vc-cyan), var(--vc-purple));
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--vc-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.35rem;
+    }
+    .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    /* Buttons */
+    .btn-vc {
+      background: linear-gradient(135deg, var(--vc-cyan), #00b4d8);
+      border: none;
+      color: #000;
+      font-weight: 600;
+      font-family: var(--vc-font);
+      border-radius: 8px;
+      transition: all 0.2s;
+      letter-spacing: -0.01em;
+    }
+    .btn-vc:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.35);
+      color: #000;
+    }
+    .btn-vc-outline {
+      background: transparent;
+      border: 1px solid var(--vc-border);
+      color: var(--vc-text);
+      font-family: var(--vc-font);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .btn-vc-outline:hover {
+      border-color: var(--vc-cyan);
+      color: var(--vc-cyan);
+      background: rgba(0, 229, 255, 0.06);
+    }
+    .btn-vc-purple {
+      background: linear-gradient(135deg, var(--vc-purple), #7c3aed);
+      border: none;
+      color: #fff;
+      font-family: var(--vc-font);
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .btn-vc-purple:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35);
+      color: #fff;
+    }
+
+    /* Form controls */
+    .form-control-vc, .form-select-vc {
+      background: var(--vc-surface) !important;
+      border: 1px solid var(--vc-border) !important;
+      color: var(--vc-text) !important;
+      border-radius: 8px !important;
+      font-family: var(--vc-font) !important;
+      font-size: 0.9rem !important;
+      transition: border-color 0.2s !important;
+    }
+    .form-control-vc:focus, .form-select-vc:focus {
+      border-color: var(--vc-cyan) !important;
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12) !important;
+      outline: none !important;
+    }
+    .form-control-vc::placeholder { color: var(--vc-muted) !important; }
+
+    /* Badge / chip */
+    .vc-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .badge-cyan { background: rgba(0,229,255,0.15); color: var(--vc-cyan); }
+    .badge-purple { background: rgba(168,85,247,0.15); color: var(--vc-purple); }
+    .badge-green { background: rgba(34,211,165,0.15); color: var(--vc-green); }
+    .badge-orange { background: rgba(255,107,53,0.15); color: var(--vc-orange); }
+    .badge-gray { background: rgba(100,116,139,0.2); color: var(--vc-muted); }
+
+    /* Progress bar */
+    .vc-progress {
+      height: 4px;
+      background: var(--vc-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .vc-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--vc-cyan), var(--vc-purple));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .vc-toast {
+      background: var(--vc-card);
+      border: 1px solid var(--vc-border);
+      border-radius: 10px;
+      padding: 0.75rem 1.1rem;
+      font-size: 0.875rem;
+      min-width: 280px;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .vc-toast.success { border-left: 3px solid var(--vc-green); }
+    .vc-toast.error   { border-left: 3px solid var(--vc-orange); }
+    .vc-toast.info    { border-left: 3px solid var(--vc-cyan); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Section headings */
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--vc-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Divider */
+    .vc-divider {
+      height: 1px;
+      background: var(--vc-border);
+      margin: 1.25rem 0;
+    }
+
+    /* Spinner */
+    .vc-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(0,229,255,0.2);
+      border-top-color: var(--vc-cyan);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Glow effects */
+    .glow-cyan { box-shadow: 0 0 20px rgba(0,229,255,0.2); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168,85,247,0.2); }
+    .text-cyan { color: var(--vc-cyan) !important; }
+    .text-purple { color: var(--vc-purple) !important; }
+    .text-green { color: var(--vc-green) !important; }
+    .text-orange { color: var(--vc-orange) !important; }
+    .text-muted-vc { color: var(--vc-muted) !important; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .vc-navbar .d-flex { flex-wrap: wrap; gap: 0.25rem; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="vc-navbar">
+  <div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-4">
+        <a href="/" class="vc-logo"><i class="bi bi-eye-fill me-1"></i>Vision<span>Craft</span></a>
+        <div class="d-flex gap-1">
+          <a href="/dashboard/" class="nav-link-vc {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-grid me-1"></i>Dashboard
+          </a>
+          <a href="/gallery/" class="nav-link-vc {% if request.resolver_match.url_name == 'gallery' %}active{% endif %}">
+            <i class="bi bi-images me-1"></i>Gallery
+          </a>
+          <a href="/upload/" class="nav-link-vc {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">
+            <i class="bi bi-cloud-upload me-1"></i>Upload
+          </a>
+          <a href="/history/" class="nav-link-vc {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+            <i class="bi bi-clock-history me-1"></i>History
+          </a>
+          <a href="/api/stats/" target="_blank" class="nav-link-vc">
+            <i class="bi bi-code-slash me-1"></i>API
+          </a>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted-vc" style="font-size:0.8rem;">{{ user.username }}</span>
+        <a href="/auth/logout/" class="btn-vc-outline btn btn-sm px-3">
+          <i class="bi bi-box-arrow-right me-1"></i>Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+{% if messages %}
+<div id="django-messages" style="display:none">
+  {% for msg in messages %}
+  <span data-type="{{ msg.tags }}" data-text="{{ msg }}"></span>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<div id="toast-container"></div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ── Toast System ──────────────────────────────────────────────────────────────
+function showToast(message, type = 'info', duration = 4000) {
+  const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
+  const colors = { success: '#22d3a5', error: '#ff6b35', info: '#00e5ff' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `vc-toast ${type}`;
+  toast.innerHTML = `<i class="bi ${icons[type] || icons.info}" style="color:${colors[type]};font-size:1rem;flex-shrink:0"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, duration);
+}
+
+// Show Django messages as toasts
+document.addEventListener('DOMContentLoaded', () => {
+  const msgContainer = document.getElementById('django-messages');
+  if (msgContainer) {
+    msgContainer.querySelectorAll('span').forEach(el => {
+      const type = el.dataset.type.includes('error') ? 'error' : el.dataset.type.includes('success') ? 'success' : 'info';
+      showToast(el.dataset.text, type);
+    });
+  }
+});
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

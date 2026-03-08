@@ -1,0 +1,29 @@
+# Virtual environment
+venv/
+
+# Database
+db.sqlite3
+
+# Environment variables (keep secrets safe)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Media uploads (don't push user files)
+media/uploads/
+media/processed/
+
+# Static collected files
+staticfiles/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

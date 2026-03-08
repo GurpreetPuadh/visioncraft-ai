@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% block title %}Editor — {{ media.original_filename }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  body { overflow-x: hidden; }
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+  .panel {
+    background: var(--vc-surface);
+    border-right: 1px solid var(--vc-border);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .panel-right {
+    background: var(--vc-surface);
+    border-left: 1px solid var(--vc-border);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .panel-center {
+    background: var(--vc-bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--vc-border);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--vc-muted);
+  }
+  .op-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--vc-text);
+    font-size: 0.82rem;
+    font-family: var(--vc-font);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .op-btn:hover { background: var(--vc-card); color: var(--vc-cyan); }
+  .op-btn.active {
+    background: rgba(0,229,255,0.1);
+    color: var(--vc-cyan);
+    border: 1px solid rgba(0,229,255,0.2);
+  }
+  .op-icon { width: 22px; height: 22px; border-radius: 5px; display:flex;align-items:center;justify-content:center;font-size:0.75rem;flex-shrink:0; }
+  .canvas-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .media-display {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: opacity 0.3s;
+  }
+  .processing-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(9,12,20,0.85);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 10;
+  }
+  .processing-overlay.show { display: flex; }
+  .prompt-bar {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--vc-border);
+    background: var(--vc-surface);
+  }
+  .prompt-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .history-item {
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--vc-border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .history-item:hover { background: var(--vc-card); }
+  .history-item.active { background: rgba(0,229,255,0.05); border-left: 2px solid var(--vc-cyan); }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(30,37,53,0.5);
+  }
+  .meta-label { font-size: 0.72rem; color: var(--vc-muted); }
+  .meta-value { font-size: 0.78rem; color: var(--vc-text); font-family: var(--vc-mono); }
+  .detection-box {
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .color-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem;
+  }
+  .color-dot:hover {
+    transform: scale(1.25);
+    border-color: rgba(255,255,255,0.5);
+  }
+  @media (max-width: 900px) {
+    .editor-layout { grid-template-columns: 1fr; height: auto; }
+    .panel, .panel-right { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-layout">
+
+  <!-- LEFT PANEL: Operations -->
+  <div class="panel">
+    <div class="panel-header">AI Operations</div>
+    <div class="p-2">
+
+      <!-- Prompt section -->
+      <div class="mb-3">
+        <p style="font-size:0.72rem;color:var(--vc-muted);padding:0.5rem 0.5rem 0.25rem;margin:0">Natural Language Prompt</p>
+        <textarea id="promptInput" class="form-control-vc w-100 p-2" rows="2"
+          style="resize:none;font-size:0.82rem;border-radius:8px;padding:0.5rem !important"
+          placeholder="e.g. detect all objects, remove background, sharpen image..."></textarea>
+        <button class="btn btn-vc w-100 mt-1 py-1" onclick="applyPrompt()" style="font-size:0.82rem">
+          <i class="bi bi-cpu me-1"></i>Run Prompt
+        </button>
+      </div>
+
+      <div class="vc-divider" style="margin:0.75rem 0"></div>
+
+      <!-- Manual operations -->
+      <p style="font-size:0.68rem;color:var(--vc-muted);padding:0 0.5rem;margin:0 0 0.5rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Detection</p>
+      <button class="op-btn" onclick="applyOp('detect_objects')">
+        <span class="op-icon" style="background:rgba(0,229,255,0.1);color:var(--vc-cyan)"><i class="bi bi-search"></i></span>
+        Object Detection
+      </button>
+
+      <p style="font-size:0.68rem;color:var(--vc-muted);padding:0 0.5rem;margin:0.75rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Background</p>
+      <button class="op-btn" onclick="applyOp('remove_background')">
+        <span class="op-icon" style="background:rgba(168,85,247,0.1);color:var(--vc-purple)"><i class="bi bi-scissors"></i></span>
+        Remove Background
+      </button>
+      <button class="op-btn" onclick="applyOp('blur_background')">
+        <span class="op-icon" style="background:rgba(168,85,247,0.1);color:var(--vc-purple)"><i class="bi bi-droplet-half"></i></span>
+        Blur Background
+      </button>
+
+      <!-- BG Color Picker -->
+      <div style="padding:0.4rem 0.5rem 0.25rem">
+        <p style="font-size:0.68rem;color:var(--vc-muted);margin:0 0 0.4rem;font-weight:600">Change BG Color</p>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:0.4rem">
+          <button class="color-dot" title="White"   onclick="changeBg('white',  [255,255,255])" style="background:#ffffff"></button>
+          <button class="color-dot" title="Black"   onclick="changeBg('black',  [0,0,0])"       style="background:#000000"></button>
+          <button class="color-dot" title="Red"     onclick="changeBg('red',    [0,0,255])"     style="background:#ff3333"></button>
+          <button class="color-dot" title="Blue"    onclick="changeBg('blue',   [255,0,0])"     style="background:#3366ff"></button>
+          <button class="color-dot" title="Green"   onclick="changeBg('green',  [0,200,0])"     style="background:#22c55e"></button>
+          <button class="color-dot" title="Yellow"  onclick="changeBg('yellow', [0,255,255])"   style="background:#facc15"></button>
+          <button class="color-dot" title="Orange"  onclick="changeBg('orange', [0,165,255])"   style="background:#fb923c"></button>
+          <button class="color-dot" title="Purple"  onclick="changeBg('purple', [128,0,128])"   style="background:#9333ea"></button>
+          <button class="color-dot" title="Pink"    onclick="changeBg('pink',   [203,192,255])" style="background:#f9a8d4"></button>
+          <button class="color-dot" title="Cyan"    onclick="changeBg('cyan',   [255,255,0])"   style="background:#22d3ee"></button>
+          <button class="color-dot" title="Gray"    onclick="changeBg('gray',   [128,128,128])" style="background:#6b7280"></button>
+          <button class="color-dot" title="Blur BG" onclick="changeBg('blur',   null)"          style="background:linear-gradient(135deg,#0ea5e9,#8b5cf6);color:#fff;font-size:0.6rem;font-weight:700">BLR</button>
+        </div>
+      </div>
+
+      <p style="font-size:0.68rem;color:var(--vc-muted);padding:0 0.5rem;margin:0.75rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Enhancement</p>
+      <button class="op-btn" onclick="applyOp('enhance')">
+        <span class="op-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)"><i class="bi bi-stars"></i></span>
+        Auto Enhance
+      </button>
+      <button class="op-btn" onclick="applyOp('sharpen')">
+        <span class="op-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)"><i class="bi bi-crosshair"></i></span>
+        Sharpen
+      </button>
+      <button class="op-btn" onclick="applyOp('denoise')">
+        <span class="op-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)"><i class="bi bi-wind"></i></span>
+        Denoise
+      </button>
+      <button class="op-btn" onclick="applyOp('brightness')">
+        <span class="op-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)"><i class="bi bi-brightness-high"></i></span>
+        Brightness +
+      </button>
+      <button class="op-btn" onclick="applyOp('contrast')">
+        <span class="op-icon" style="background:rgba(34,211,165,0.1);color:var(--vc-green)"><i class="bi bi-circle-half"></i></span>
+        Contrast +
+      </button>
+
+      <p style="font-size:0.68rem;color:var(--vc-muted);padding:0 0.5rem;margin:0.75rem 0 0.5rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Artistic</p>
+      <button class="op-btn" onclick="applyOp('grayscale')">
+        <span class="op-icon" style="background:rgba(100,116,139,0.1);color:var(--vc-muted)"><i class="bi bi-palette2"></i></span>
+        Grayscale
+      </button>
+      <button class="op-btn" onclick="applyOp('sepia')">
+        <span class="op-icon" style="background:rgba(255,107,53,0.1);color:var(--vc-orange)"><i class="bi bi-film"></i></span>
+        Sepia Tone
+      </button>
+      <button class="op-btn" onclick="applyOp('cartoon')">
+        <span class="op-icon" style="background:rgba(255,107,53,0.1);color:var(--vc-orange)"><i class="bi bi-brush"></i></span>
+        Cartoon Effect
+      </button>
+      <button class="op-btn" onclick="applyOp('emboss')">
+        <span class="op-icon" style="background:rgba(255,107,53,0.1);color:var(--vc-orange)"><i class="bi bi-layers"></i></span>
+        Emboss
+      </button>
+      <button class="op-btn" onclick="applyOp('edge_detect')">
+        <span class="op-icon" style="background:rgba(255,107,53,0.1);color:var(--vc-orange)"><i class="bi bi-vector-pen"></i></span>
+        Edge Detection
+      </button>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL: Canvas -->
+  <div class="panel-center">
+    <!-- Toolbar -->
+    <div style="padding:0.5rem 1rem;border-bottom:1px solid var(--vc-border);display:flex;align-items:center;justify-content:space-between;background:var(--vc-surface)">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:0.8rem;color:var(--vc-muted)">{{ media.original_filename }}</span>
+        <span class="vc-badge {% if media.file_type == 'image' %}badge-cyan{% else %}badge-orange{% endif %}">
+          {{ media.file_type }}
+        </span>
+        {% if media.width and media.height %}
+        <span style="font-size:0.72rem;font-family:var(--vc-mono);color:var(--vc-muted)">{{ media.width }}×{{ media.height }}</span>
+        {% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <button id="compareBtn" class="btn btn-vc-outline btn-sm px-2" onclick="toggleCompare()" title="Compare original/result">
+          <i class="bi bi-layout-split"></i>
+        </button>
+        <button id="downloadBtn" class="btn btn-vc-outline btn-sm px-2" title="Download result" style="display:none" onclick="downloadResult()">
+          <i class="bi bi-download"></i>
+        </button>
+        <a href="/gallery/" class="btn btn-vc-outline btn-sm px-2"><i class="bi bi-grid"></i></a>
+      </div>
+    </div>
+
+    <!-- Image/Video display -->
+    <div class="canvas-wrap">
+      <div class="processing-overlay" id="processingOverlay">
+        <div style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(0,229,255,0.2);border-top-color:var(--vc-cyan);animation:spin 0.8s linear infinite"></div>
+        <div style="text-align:center">
+          <p style="color:var(--vc-text);font-weight:500;margin:0" id="overlayTitle">Processing...</p>
+          <p style="color:var(--vc-muted);font-size:0.8rem;margin:0.25rem 0 0" id="overlaySubtitle">Applying AI operation</p>
+        </div>
+      </div>
+
+      {% if media.file_type == 'image' %}
+      <img id="mediaDisplay" src="{{ media.original_file.url }}" alt="{{ media.original_filename }}" class="media-display">
+      {% else %}
+      <video id="mediaDisplay" src="{{ media.original_file.url }}" class="media-display" controls></video>
+      {% endif %}
+    </div>
+
+    <!-- Prompt bar -->
+    <div class="prompt-bar">
+      <div class="prompt-input-wrap">
+        <i class="bi bi-chat-dots text-muted-vc" style="font-size:1rem;flex-shrink:0"></i>
+        <input type="text" id="promptBarInput" class="form-control-vc flex-1"
+          placeholder='Type a prompt: "remove the background", "detect objects", "make it vintage"...'
+          onkeydown="if(event.key==='Enter') applyPromptBar()">
+        <button class="btn btn-vc px-3 py-2" onclick="applyPromptBar()" style="font-size:0.82rem;white-space:nowrap">
+          <i class="bi bi-send me-1"></i>Run
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Info + History -->
+  <div class="panel-right">
+    <div class="panel-header">File Info</div>
+    <div class="p-3">
+      <div class="meta-row">
+        <span class="meta-label">Filename</span>
+        <span class="meta-value" style="font-family:var(--vc-font);font-size:0.78rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ media.original_filename }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Size</span>
+        <span class="meta-value">{{ media.file_size_display }}</span>
+      </div>
+      {% if media.width and media.height %}
+      <div class="meta-row">
+        <span class="meta-label">Dimensions</span>
+        <span class="meta-value">{{ media.width }}×{{ media.height }}</span>
+      </div>
+      {% endif %}
+      {% if media.duration %}
+      <div class="meta-row">
+        <span class="meta-label">Duration</span>
+        <span class="meta-value">{{ media.duration|floatformat:1 }}s</span>
+      </div>
+      {% endif %}
+      <div class="meta-row">
+        <span class="meta-label">Type</span>
+        <span class="meta-value">{{ media.file_type }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Uploaded</span>
+        <span class="meta-value">{{ media.created_at|date:"M d, Y" }}</span>
+      </div>
+    </div>
+
+    <!-- Detections panel -->
+    <div id="detectionsPanel" style="display:none">
+      <div class="panel-header">Detected Objects</div>
+      <div class="p-3" id="detectionsList"></div>
+    </div>
+
+    <!-- Operation history -->
+    <div class="panel-header" style="margin-top:0">Operation History</div>
+    <div id="opHistory">
+      {% if operations %}
+        {% for op in operations %}
+        <div class="history-item {% if forloop.last %}active{% endif %}"
+             onclick="loadResult('{{ op.result_file.url }}', '{{ op.id }}')"
+             data-op-id="{{ op.id }}">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <p style="font-size:0.8rem;font-weight:500;margin:0;color:var(--vc-text)">{{ op.get_operation_type_display }}</p>
+              {% if op.prompt %}
+              <p style="font-size:0.7rem;color:var(--vc-muted);margin:0.1rem 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px">"{{ op.prompt|truncatechars:30 }}"</p>
+              {% endif %}
+            </div>
+            <div class="text-end">
+              <span class="vc-badge {% if op.status == 'completed' %}badge-green{% else %}badge-orange{% endif %}">{{ op.status }}</span>
+              {% if op.processing_time %}
+              <p style="font-size:0.65rem;font-family:var(--vc-mono);color:var(--vc-muted);margin:0.15rem 0 0">{{ op.processing_time }}s</p>
+              {% endif %}
+            </div>
+          </div>
+          {% if op.result_file %}
+          <a href="/download/{{ op.id }}/" class="d-block mt-1" style="font-size:0.7rem;color:var(--vc-cyan);text-decoration:none">
+            <i class="bi bi-download me-1"></i>Download
+          </a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="text-center p-4">
+        <p class="text-muted-vc" style="font-size:0.8rem">No operations yet.<br>Apply an effect to get started.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const FILE_ID = {{ media.id }};
+const FILE_TYPE = "{{ media.file_type }}";
+const CSRF = '{{ csrf_token }}';
+let currentResultUrl = null;
+let showingOriginal = false;
+let currentOpId = null;
+const originalSrc = document.getElementById('mediaDisplay').src;
+
+function showOverlay(title = 'Processing...', subtitle = 'Applying AI operation') {
+  const o = document.getElementById('processingOverlay');
+  o.classList.add('show');
+  document.getElementById('overlayTitle').textContent = title;
+  document.getElementById('overlaySubtitle').textContent = subtitle;
+}
+function hideOverlay() { document.getElementById('processingOverlay').classList.remove('show'); }
+
+async function applyOp(operation) {
+  await runEdit({ operation });
+}
+async function applyPrompt() {
+  const prompt = document.getElementById('promptInput').value.trim();
+  if (!prompt) return showToast('Enter a prompt first', 'error');
+  await runEdit({ operation: 'prompt_edit', prompt });
+}
+async function applyPromptBar() {
+  const prompt = document.getElementById('promptBarInput').value.trim();
+  if (!prompt) return showToast('Enter a prompt first', 'error');
+  document.getElementById('promptInput').value = prompt;
+  await runEdit({ operation: 'prompt_edit', prompt });
+}
+
+async function runEdit(payload) {
+  showOverlay('Running AI Operation', payload.prompt || payload.operation);
+  try {
+    const res = await fetch(`/editor/${FILE_ID}/apply/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    hideOverlay();
+
+    if (data.status === 'completed') {
+      currentResultUrl = data.result_url;
+      currentOpId = data.operation_id;
+      document.getElementById('mediaDisplay').src = data.result_url;
+      document.getElementById('downloadBtn').style.display = 'inline-flex';
+      showToast(`✓ ${data.operation_type.replace(/_/g,' ')} complete (${data.processing_time}s)`, 'success');
+
+      // Show detections if any
+      if (data.detections && data.detections.length > 0) {
+        showDetections(data.detections);
+      }
+
+      // Add to history panel
+      addHistoryItem(data);
+      document.getElementById('promptBarInput').value = '';
+
+    } else {
+      showToast(data.error || 'Processing failed', 'error');
+    }
+  } catch(e) {
+    hideOverlay();
+    showToast('Request failed: ' + e.message, 'error');
+  }
+}
+
+function showDetections(dets) {
+  const panel = document.getElementById('detectionsPanel');
+  const list = document.getElementById('detectionsList');
+  panel.style.display = 'block';
+  list.innerHTML = dets.map(d => `
+    <div class="detection-box">
+      <div>
+        <span style="font-size:0.8rem;font-weight:500;color:var(--vc-text)">${d.label}</span>
+        <span style="font-size:0.7rem;color:var(--vc-muted);margin-left:0.4rem">${d.x},${d.y} ${d.width}×${d.height}</span>
+      </div>
+      <span class="vc-badge badge-cyan">${(d.confidence*100).toFixed(0)}%</span>
+    </div>
+  `).join('');
+}
+
+function addHistoryItem(data) {
+  const history = document.getElementById('opHistory');
+  // Remove "no operations" message if present
+  const empty = history.querySelector('.text-center');
+  if (empty) empty.remove();
+
+  // Deactivate all
+  history.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+
+  const item = document.createElement('div');
+  item.className = 'history-item active';
+  item.dataset.opId = data.operation_id;
+  item.onclick = () => loadResult(data.result_url, data.operation_id);
+  item.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <p style="font-size:0.8rem;font-weight:500;margin:0;color:var(--vc-text)">${data.operation_type.replace(/_/g,' ')}</p>
+      </div>
+      <div class="text-end">
+        <span class="vc-badge badge-green">completed</span>
+        <p style="font-size:0.65rem;font-family:var(--vc-mono);color:var(--vc-muted);margin:0.15rem 0 0">${data.processing_time}s</p>
+      </div>
+    </div>
+    <a href="/download/${data.operation_id}/" class="d-block mt-1" style="font-size:0.7rem;color:var(--vc-cyan);text-decoration:none">
+      <i class="bi bi-download me-1"></i>Download
+    </a>`;
+  history.insertBefore(item, history.firstChild);
+}
+
+function loadResult(url, opId) {
+  if (!url || url === 'None') return;
+  document.getElementById('mediaDisplay').src = url;
+  currentResultUrl = url;
+  currentOpId = opId;
+  document.getElementById('downloadBtn').style.display = 'inline-flex';
+  document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll(`[data-op-id="${opId}"]`).forEach(el => el.classList.add('active'));
+}
+
+function toggleCompare() {
+  const display = document.getElementById('mediaDisplay');
+  if (showingOriginal) {
+    display.src = currentResultUrl || originalSrc;
+    showToast('Showing result', 'info');
+  } else {
+    display.src = originalSrc;
+    showToast('Showing original', 'info');
+  }
+  showingOriginal = !showingOriginal;
+}
+
+
+function changeBg(colorName, colorBgr) {
+  runEdit({
+    operation: 'change_bg_color',
+    prompt: `change background to ${colorName}`,
+    params: { color_name: colorName, color_bgr: colorBgr }
+  });
+}
+function downloadResult() {
+  if (currentOpId) window.location.href = `/download/${currentOpId}/`;
+}
+</script>
+{% endblock %}

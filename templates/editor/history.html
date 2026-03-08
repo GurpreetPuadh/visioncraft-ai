@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}History — VisionCraft{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="mb-4">
+    <h4 style="font-weight:700;letter-spacing:-0.02em;margin:0">Operation History</h4>
+    <p class="text-muted-vc mb-0" style="font-size:0.875rem">All AI operations you've run</p>
+  </div>
+
+  {% if operations %}
+  <div class="vc-card p-0" style="overflow:hidden">
+    <div class="table-responsive">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1px solid var(--vc-border)">
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Operation</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">File</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Prompt</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Status</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Time</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Date</th>
+            <th style="padding:0.75rem 1rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--vc-muted);font-weight:700">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for op in operations %}
+          <tr style="border-bottom:1px solid var(--vc-border);transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
+            <td style="padding:0.65rem 1rem">
+              <span style="font-size:0.82rem;font-weight:500;color:var(--vc-text)">{{ op.get_operation_type_display }}</span>
+            </td>
+            <td style="padding:0.65rem 1rem">
+              <a href="/editor/{{ op.media_file.id }}/" style="font-size:0.78rem;color:var(--vc-cyan);text-decoration:none">
+                {{ op.media_file.original_filename|truncatechars:25 }}
+              </a>
+            </td>
+            <td style="padding:0.65rem 1rem;max-width:180px">
+              {% if op.prompt %}
+              <span style="font-size:0.75rem;color:var(--vc-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">"{{ op.prompt|truncatechars:30 }}"</span>
+              {% else %}
+              <span style="font-size:0.75rem;color:var(--vc-border)">—</span>
+              {% endif %}
+            </td>
+            <td style="padding:0.65rem 1rem">
+              <span class="vc-badge {% if op.status == 'completed' %}badge-green{% elif op.status == 'failed' %}badge-orange{% else %}badge-gray{% endif %}">
+                {{ op.status }}
+              </span>
+            </td>
+            <td style="padding:0.65rem 1rem">
+              {% if op.processing_time %}
+              <span style="font-size:0.75rem;font-family:var(--vc-mono);color:var(--vc-muted)">{{ op.processing_time }}s</span>
+              {% else %}
+              <span style="color:var(--vc-border)">—</span>
+              {% endif %}
+            </td>
+            <td style="padding:0.65rem 1rem">
+              <span style="font-size:0.75rem;color:var(--vc-muted)">{{ op.created_at|date:"M d, H:i" }}</span>
+            </td>
+            <td style="padding:0.65rem 1rem">
+              {% if op.result_file %}
+              <a href="/download/{{ op.id }}/" class="btn btn-vc-outline btn-sm px-2" style="font-size:0.72rem">
+                <i class="bi bi-download me-1"></i>DL
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-clock-history" style="font-size:3rem;color:var(--vc-border)"></i>
+    <p class="text-muted-vc mt-3">No operations yet. <a href="/upload/" class="text-cyan">Upload a file</a> and start editing.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
