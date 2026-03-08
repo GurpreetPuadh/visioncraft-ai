@@ -1,5 +1,5 @@
 # VisionCraft AI — Prompt-Guided Image & Video Editor
-
+![VisionCraft Demo](screenshots/editor.png)
 A full-stack Django application that lets users edit images and videos using **natural language prompts** powered by **OpenCV** computer vision models.
 
 ---
